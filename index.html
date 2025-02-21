@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>文件存储测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .container {
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 5px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background-color: #45a049;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #dff0d8;
+            color: #3c763d;
+        }
+        .error {
+            background-color: #f2dede;
+            color: #a94442;
+        }
+        .section {
+            margin: 20px;
+            padding: 20px;
+            border: 1px solid #ccc;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>文件存储测试</h2>
+        
+        <div class="section">
+            <h3>检查Key是否存在</h3>
+            <input type="text" id="checkKey" placeholder="输入要检查的key">
+            <button onclick="checkKeyExists()">检查</button>
+            <div id="checkResult" class="result"></div>
+        </div>
+
+        <div class="section">
+            <h3>文件上传测试</h3>
+            <input type="text" id="fileKey" placeholder="输入key">
+            <input type="file" id="fileInput">
+            <button onclick="uploadFile()">上传</button>
+            <div id="fileResult" class="result"></div>
+        </div>
+
+        <div class="section">
+            <h3>字符串存储测试</h3>
+            <input type="text" id="stringKey" placeholder="输入key">
+            <input type="text" id="stringValue" placeholder="输入要存储的字符串">
+            <button onclick="storeString()">存储</button>
+            <div id="stringResult" class="result"></div>
+        </div>
+
+        <div class="section">
+            <h3>获取测试</h3>
+            <input type="text" id="getKey" placeholder="输入key">
+            <button onclick="getString()">获取字符串</button>
+            <button onclick="getFile()">获取文件</button>
+            <div id="getResult" class="result"></div>
+        </div>
+
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const baseUrl = 'http://localhost:8282';
+
+        async function checkKeyExists() {
+            const key = document.getElementById('checkKey').value;
+            if (!key) {
+                alert('请输入key');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${baseUrl}/exists/${key}`);
+                const data = await response.json();
+                const resultDiv = document.getElementById('checkResult');
+                resultDiv.innerHTML = `
+                    <p>Key是否存在: ${data.exists ? '是' : '否'}</p>
+                    <p>详细信息:</p>
+                    <ul>
+                        <li>字符串存储: ${data.details.string ? '存在' : '不存在'}</li>
+                        <li>文件存储: ${data.details.file ? '存在' : '不存在'}</li>
+                    </ul>
+                `;
+            } catch (error) {
+                document.getElementById('checkResult').textContent = '检查失败: ' + error;
+            }
+        }
+
+        async function uploadFile() {
+            const key = document.getElementById('fileKey').value;
+            const fileInput = document.getElementById('fileInput');
+            
+            if (!key || !fileInput.files[0]) {
+                alert('请输入key并选择文件');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            try {
+                const response = await fetch(`${baseUrl}/store/${key}`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                document.getElementById('fileResult').textContent = JSON.stringify(data);
+            } catch (error) {
+                document.getElementById('fileResult').textContent = '上传失败: ' + error;
+            }
+        }
+
+        async function storeString() {
+            const key = document.getElementById('stringKey').value;
+            const value = document.getElementById('stringValue').value;
+            
+            if (!key || !value) {
+                alert('请输入key和字符串');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${baseUrl}/string/${key}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ value: value })
+                });
+                const data = await response.json();
+                document.getElementById('stringResult').textContent = JSON.stringify(data);
+            } catch (error) {
+                document.getElementById('stringResult').textContent = '存储失败: ' + error;
+            }
+        }
+
+        async function getString() {
+            const key = document.getElementById('getKey').value;
+            if (!key) {
+                alert('请输入key');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${baseUrl}/string/${key}`);
+                const data = await response.json();
+                document.getElementById('getResult').textContent = JSON.stringify(data);
+            } catch (error) {
+                document.getElementById('getResult').textContent = '获取失败: ' + error;
+            }
+        }
+
+        async function getFile() {
+            const key = document.getElementById('getKey').value;
+            if (!key) {
+                alert('请输入key');
+                return;
+            }
+
+            try {
+                window.open(`${baseUrl}/get/${key}`);
+            } catch (error) {
+                document.getElementById('getResult').textContent = '获取失败: ' + error;
+            }
+        }
+    </script>
+</body>
+</html> 
